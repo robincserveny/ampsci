@@ -9,6 +9,7 @@
 #include "DiracOperator/Operators/hfs.hpp"
 #include "DiracOperator/Operators/jls.hpp"
 #include "DiracOperator/Operators/p.hpp"
+#include "DiracOperator/Operators/h1.hpp"
 
 namespace {
 
@@ -63,5 +64,8 @@ const DiracOperator::Register<DiracOperator::p> r_p{"p", "Momentum operator"};
 const DiracOperator::Register<DiracOperator::l> r_l{"l", "Orbital L"};
 
 const DiracOperator::Register<DiracOperator::s> r_s{"s", "Spin S (not sigma)"};
+
+const DiracOperator::Register<DiracOperator::h1> r_h1{
+  "h1", "Anomalous moment in the magnetic field QED correction"};
 
 } // namespace
