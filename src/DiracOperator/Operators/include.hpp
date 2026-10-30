@@ -13,3 +13,4 @@
 #include "DiracOperator/Operators/jL.hpp"
 #include "DiracOperator/Operators/jls.hpp"
 #include "DiracOperator/Operators/p.hpp"
+#include "DiracOperator/Operators/h1.hpp"
