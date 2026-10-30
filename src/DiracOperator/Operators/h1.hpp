@@ -24,23 +24,22 @@ public:
   std::string name()  const override final { return std::string("h1"); }
   std::string units() const override final { return std::string("|mu_B|"); }
 
-  double angularF(const int ka, const int kb) const override final {
-    //return (ka + kb) * Angular::Ck_kk(1, -ka, kb);
+  double angularF(int, int) const override final {
 	// free electron a_e for now (one-loop (Schwinger) value)
 	return PhysConst::alpha / (2.0 * M_PI);
   }
   double angularCff(const int ka, const int kb) const override final {
 	//if (ka != kb) {
-      return 2.0 * Angular:S_kk(ka, kb);
+      return 2.0 * Angular::S_kk(ka, kb);
     //} else {
     //  return 0.0;
     //}
   }
   double angularCgg(const int ka, const int kb) const override final {
 	//if (ka != kb) {
-      return (-2.0) * Angular::S_kk( (-1.0)*ka, (-1.0)*kb );
+      return (-2.0) * Angular::S_kk(-ka, -kb);
     //} else {
-    //  return 2.0 * (Angular::S_kk(ka, ka) + Angular::S_kk( (-1.0)*ka, (-1.0)*ka));
+    //  return 2.0 * (Angular::S_kk(ka, ka) + Angular::S_kk(-ka, -ka));
     //}
   }
   double angularCfg(int, int) const override final { return 0.0; }
@@ -60,7 +59,6 @@ public:
 
 private:
   const std::vector<double> m_r; // store radial vector (copy)
-  const double m_alpha;
 };
 
 } // namespace DiracOperator
