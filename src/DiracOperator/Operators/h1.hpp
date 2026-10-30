@@ -16,7 +16,7 @@ Units of |mu_B|.
 class h1 final : public TensorOperator {
 public:
   h1(const Grid &gr)
-    : TensorOperator(1, Parity::even, +0.0, {}, Realness::real, false),
+    : TensorOperator(1, Parity::even, +1.0, {}, Realness::real, false),
       m_r(gr.r()) {}
   h1 &operator=(const h1 &) = delete;
   h1(const h1 &) = default;
