@@ -131,7 +131,7 @@ TEST_CASE("Physics: Radiative Potential", "[RadPot][QED][integration]") {
     std::cout
       << "        de(0)     [ expected ] |  de(HF)    [ expected ]  eps\n";
     const auto [at_worst, eps_worst] =
-      helper::compare_QED(Ueh_data, {1.0, 0.0, 0.0, 0.0, 0.0});
+      helper::compare_QED(Ueh_data, {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
     REQUIRE(std::abs(eps_worst) < 6.0e-4);
   }
 
@@ -142,7 +142,7 @@ TEST_CASE("Physics: Radiative Potential", "[RadPot][QED][integration]") {
     std::cout
       << "        de(0)     [ expected ] |  de(HF)    [ expected ]  eps\n";
     const auto [at_worst, eps_worst] =
-      helper::compare_QED(SE_data, {0.0, 1.0, 1.0, 1.0, 0.0});
+      helper::compare_QED(SE_data, {0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0});
     REQUIRE(std::abs(eps_worst) < 6.0e-4);
   }
 
@@ -172,18 +172,18 @@ TEST_CASE("Physics: Radiative Potential", "[RadPot][QED][integration]") {
     std::cout
       << "                 mag   [expct], high  [expct], low   [expct]\n";
     const auto lam = [&](auto &exp, double rN, std::string name) {
-      const auto hm =
-        DiracOperator::Vrad({wf.grid().r(), (double)wf.Znuc(), rN, 15.0,
-                             QED::RadPot::Scale{0.0, 0.0, 0.0, 1.0, 0.0},
-                             std::vector{1.0}, false, false});
-      const auto hh =
-        DiracOperator::Vrad({wf.grid().r(), (double)wf.Znuc(), rN, 15.0,
-                             QED::RadPot::Scale{0.0, 1.0, 0.0, 0.0, 0.0},
-                             std::vector{1.0}, false, false});
-      const auto hl =
-        DiracOperator::Vrad({wf.grid().r(), (double)wf.Znuc(), rN, 15.0,
-                             QED::RadPot::Scale{0.0, 0.0, 1.0, 0.0, 0.0},
-                             std::vector{1.0}, false, false});
+      const auto hm = DiracOperator::Vrad(
+        {wf.grid().r(), (double)wf.Znuc(), rN, 15.0,
+         QED::RadPot::Scale{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0},
+         std::vector{1.0}, false, false});
+      const auto hh = DiracOperator::Vrad(
+        {wf.grid().r(), (double)wf.Znuc(), rN, 15.0,
+         QED::RadPot::Scale{0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+         std::vector{1.0}, false, false});
+      const auto hl = DiracOperator::Vrad(
+        {wf.grid().r(), (double)wf.Znuc(), rN, 15.0,
+         QED::RadPot::Scale{0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0},
+         std::vector{1.0}, false, false});
       const auto &Fv = wf.valence().at(0);
 
       const auto m = hm.radialIntegral(Fv, Fv) * 1.0e5;

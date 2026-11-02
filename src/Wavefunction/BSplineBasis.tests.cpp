@@ -308,8 +308,8 @@ TEST_CASE("Wavefunction: BSpline-basis",
           std::nullopt;
       wf.set_HF(HF::Method::HartreeFock, "[Xe]", breit_params);
       if (f_QED)
-        wf.radiativePotential({1.0, 1.0, 1.0, 1.0, 0.0}, 10.0, 1.0, {1.0},
-                              false, false);
+        wf.radiativePotential({1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0}, 10.0, 1.0,
+                              {1.0}, false, false);
       wf.solve_core();
       wf.solve_valence("7sp5d4f");
 

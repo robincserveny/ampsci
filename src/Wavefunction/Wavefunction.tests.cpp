@@ -169,8 +169,8 @@ TEST_CASE("Wavefunction", "[wf][unit]") {
   Wavefunction wfQED({num_points, r0, rmax, b, "loglinear", -1.0},
                      {"Na", -1, "Fermi", -1.0, -1.0}, 1.0);
   wfQED.set_HF(HF::Method::HartreeFock, "[Ne]", std::nullopt, 1.0e-4);
-  wfQED.radiativePotential({1.0, 0.0, 1.0, 1.0, 1.0}, 1.0, 1.0, {1.0, 0.0},
-                           false, true);
+  wfQED.radiativePotential({1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0}, 1.0, 1.0,
+                           {1.0, 0.0}, false, true);
   wfQED.solve_core(true);
   wfQED.solve_valence(val_str);
 

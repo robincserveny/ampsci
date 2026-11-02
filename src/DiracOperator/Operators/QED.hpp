@@ -71,8 +71,8 @@ public:
     const auto r_N_au =
       std::sqrt(5.0 / 3.0) * scale_rN * wf.nucleus().r_rms() / PhysConst::aB_fm;
     auto qed = QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
-                           {x_Ueh, x_SEe_h, x_SEe_l, x_SEm, x_wk}, x_spd, true,
-                           readwrite, wf.run_label());
+                           {x_Ueh, x_SEe_h, x_SEe_l, x_SEm, 0.0, 0.0, x_wk},
+                           x_spd, true, readwrite, wf.run_label());
     return std::make_unique<Vrad>(std::move(qed));
   }
 
