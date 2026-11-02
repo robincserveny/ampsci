@@ -1,11 +1,14 @@
 #include "RadPot.hpp"
 #include "IO/FRW_fileReadWrite.hpp"
 #include "Maths/Interpolator.hpp"
+#include "Maths/NumCalc_quadIntegrate.hpp" //for AMM corrections (need core of wf)
 #include "Physics/AtomData.hpp"
 #include "Physics/PhysConst_constants.hpp"
 #include "Potentials/FGRadPot.hpp"
+#include "Wavefunction/Wavefunction.hpp" //for AMM corrections (need core of wf)
 #include "qip/Vector.hpp"
 #include <algorithm>
+#include <cstdlib> //for std::abort
 #include <vector>
 
 namespace QED {
@@ -60,6 +63,10 @@ bool RadPot::read_write(const std::vector<double> &r, IO::FRW::RoW rw,
     label += 'l';
   if (m_f.m != 0.0)
     label += 'm';
+  if (m_f.dm != 0.0)
+    label += "DM";
+  if (m_f.mV2 != 0.0)
+    label += "mV2";
   if (m_f.wk != 0.0)
     label += "w";
   if (m_rN == 0.0)
@@ -105,6 +112,10 @@ bool RadPot::read_write(const std::vector<double> &r, IO::FRW::RoW rw,
       mVl = Interpolator::interpolate(t_r, mVl, r);
     if (!mHm.empty())
       mHm = Interpolator::interpolate(t_r, mHm, r);
+    if (!mDeltaH.empty())
+      mDeltaH = Interpolator::interpolate(t_r, mDeltaH, r);
+    if (!mHmV2.empty())
+      mHmV2 = Interpolator::interpolate(t_r, mHmV2, r);
     if (!mVwk.empty())
       mVwk = Interpolator::interpolate(t_r, mVwk, r);
   }
@@ -146,11 +157,13 @@ void RadPot::form_potentials(const std::vector<double> &r) {
   }
   if (m_f.dm != 0.0) {
     if (print)
-      std::cout << "Self-energy (magnetic) DeltaH; scale=" << m_f.dm << "\n";
+      std::cout << "Self-energy (magnetic) DeltaH (Overleaf 5.2); scale="
+                << m_f.dm << "\n";
   }
   if (m_f.mV2 != 0.0) {
     if (print)
-      std::cout << "Self-energy (magnetic) V2; scale=" << m_f.mV2 << "\n";
+      std::cout << "Self-energy (magnetic) V2 (Overleaf 5.1); scale=" << m_f.mV2
+                << "\n";
   }
   if (m_f.wk != 0.0) {
     if (print)
@@ -175,6 +188,17 @@ std::vector<double> RadPot::Hmag(int l) const {
   return xl * m_f.m * mHm;
 }
 //------------------------------------------------------------------------------
+std::vector<double> RadPot::Hmag_AMM(int l) const {
+  using namespace qip::overloads;
+  const auto xl = m_xl(l);
+
+  if (m_f.mV2 != 0.0) {
+    return xl * m_f.mV2 * mHmV2;
+  }
+
+  return xl * (m_f.m * mHm + m_f.dm * mDeltaH);
+}
+//------------------------------------------------------------------------------
 std::vector<double> RadPot::Vu(int l) const {
   using namespace qip::overloads;
   const auto xl = m_xl(l);
@@ -193,6 +217,149 @@ std::vector<double> RadPot::Vh(int l) const {
   const auto a = FGRP::Fit::A(m_Z, l);
   const auto xl = m_xl(l);
   return xl * a * m_f.h * mVh;
+}
+
+void RadPot::update_core_corrections(const Wavefunction &wf) {
+
+  // Build Ncore_r by integrating each core state's f and g components.
+  // Build mDeltaH from Ncore_r.
+  // Build nuclear enclosed charge Z_r.
+  // Build mHmV2 from Z_r - Ncore_r.
+
+  const double scale_dm = m_f.dm;
+  const double scale_mV2 = m_f.mV2;
+
+  if ((scale_dm != 0.0) && (scale_mV2 != 0.0)) {
+    std::cout << "dm and mV2 can't be non-zero at the same time!" << "\n";
+  } else if (scale_dm != 0.0) {
+    mDeltaH = form_DeltaH(wf, scale_dm);
+  } else if (scale_mV2 != 0.0) {
+    const std::vector<double> DeltaH =
+      form_DeltaH(wf, 1.0); // scale both at same time at end
+    const std::vector<double> Zr_r2 = form_Zr_r2(wf);
+
+    // check if both vectors same length
+    // if not then error
+    if (DeltaH.size() != Zr_r2.size()) {
+      std::cout << "QED AMM correction vectors have different sizes" << "\n";
+      std::abort();
+    }
+    //else calculate DeltaH + Zr_r2
+    mHmV2.resize(DeltaH.size());
+    for (std::size_t i = 0; i < DeltaH.size(); ++i) {
+      mHmV2[i] = scale_mV2 * (DeltaH[i] + Zr_r2[i]);
+    }
+  }
+}
+//==============================================================================
+std::vector<double> RadPot::form_DeltaH(const Wavefunction &wf,
+                                        const double scale) const {
+
+  const std::vector<double> rho_nuc = nuclear_density(wf);
+
+  const Grid &gr = wf.grid();
+  std::vector<double> Ncore_r(gr.num_points(), 0.0);
+  for (const auto &Fc : wf.core()) {
+
+    const std::vector<double> fac_Ncore(gr.num_points(), Fc.twojp1());
+
+    NumCalc::additivePIntegral<NumCalc::zero_to_r>(Ncore_r, fac_Ncore, Fc.f(),
+                                                   Fc.f(), gr);
+    NumCalc::additivePIntegral<NumCalc::zero_to_r>(Ncore_r, fac_Ncore, Fc.g(),
+                                                   Fc.g(), gr);
+  } // end for loop over core states
+
+  //double a_e = PhysConst::alpha / (2.0 * M_PI);
+  //double fac = a_e * PhysConst::alpha / 2.0;
+  double global_fac = PhysConst::alpha2 / (4.0 * M_PI);
+  std::vector<double> DeltaH(gr.num_points(), 0.0);
+  for (std::size_t i = 0; i < gr.num_points(); ++i) {
+    DeltaH[i] = -scale * global_fac * Ncore_r[i] / (gr.r(i) * gr.r(i));
+  }
+  return DeltaH;
+}
+//==============================================================================
+std::vector<double> RadPot::form_Zr_r2(const Wavefunction &wf) const {
+
+  //need to get Z, \rho_nuc(r), and core f(r)/g(r)/j
+  const Grid &gr = wf.grid();
+  const std::vector<double> rho_nuc = nuclear_density(wf);
+
+  std::vector<double> Zr(gr.num_points(), 0.0); // enclosed charge
+  const std::vector<double> fac_Z(gr.num_points(),
+                                  4.0 * M_PI * wf.nucleus().z());
+  std::vector<double> r2(gr.num_points(), 0.0);
+  for (std::size_t i = 0; i < gr.num_points(); ++i) {
+    r2[i] = gr.r(i) * gr.r(i);
+  }
+
+  NumCalc::additivePIntegral<NumCalc::zero_to_r>(Zr, fac_Z, r2, rho_nuc, gr);
+
+  //return full result, is bc void NumCalc::additivePIntegral overwrites 1st argument
+  double global_fac = PhysConst::alpha2 / (4.0 * M_PI);
+  std::vector<double> Zr_r2(gr.num_points(), 0.0);
+  for (std::size_t i = 0; i < gr.num_points(); ++i) {
+    Zr_r2[i] = global_fac * Zr[i] / (gr.r(i) * gr.r(i));
+  }
+
+  return Zr_r2;
+}
+//==============================================================================
+std::vector<double> RadPot::nuclear_density(const Wavefunction &wf) const {
+
+  const auto &gr = wf.grid();
+  const auto &nucleus = wf.nucleus();
+
+  const double r_rms = nucleus.r_rms() / PhysConst::aB_fm; // convert to au
+  const auto nucleus_type =
+    (r_rms > 0.0 || nucleus.type() == Nuclear::ChargeDistro::custom) ?
+      nucleus.type() :
+      Nuclear::ChargeDistro::point;
+
+  switch (nucleus_type) { // Fermi, spherical, point, Gaussian, custom, Error
+
+  case Nuclear::ChargeDistro::Fermi: {
+    return Nuclear::fermiNuclearDensity_tcN(nucleus.t(), nucleus.c(), 1.0, gr);
+  }
+  case Nuclear::ChargeDistro::spherical: {
+    const double rN = sqrt(5.0 / 3.0) * r_rms;
+    const double rho_inside = 3.0 / (4.0 * M_PI * pow(rN, 3.0));
+
+    std::vector<double> rho(gr.num_points(), 0.0);
+    for (std::size_t i = 0; i < gr.num_points(); ++i) {
+      if (gr.r(i) < rN) {
+        rho[i] = rho_inside;
+      }
+    }
+    return rho;
+  }
+  case Nuclear::ChargeDistro::Gaussian: {
+    std::vector<double> rho(gr.num_points(), 0.0);
+
+    const double factor = std::pow(3.0 / (2.0 * M_PI * r_rms * r_rms), 1.5);
+
+    for (std::size_t i = 0; i < gr.num_points(); ++i) {
+      const double r = gr.r(i);
+      rho[i] = factor * std::exp((-3.0) * r * r / (2.0 * r_rms * r_rms));
+    }
+    return rho;
+  }
+  case Nuclear::ChargeDistro::point: {
+    std::cout << "\nCannot do AMM correction for case "
+              << Nuclear::parseType(nucleus_type) << "\n";
+    std::abort();
+  }
+  case Nuclear::ChargeDistro::custom: {
+    std::cout << "\nCannot do AMM correction for case "
+              << Nuclear::parseType(nucleus_type) << "\n";
+    std::abort();
+  }
+  case Nuclear::ChargeDistro::Error: {
+    std::cout << "\nCannot do AMM correction for case "
+              << Nuclear::parseType(nucleus_type) << "\n";
+    std::abort();
+  }
+  }
 }
 
 //==============================================================================

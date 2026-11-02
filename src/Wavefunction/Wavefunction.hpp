@@ -83,9 +83,9 @@ private:
   // Valence (single-particle) orbitals
   std::vector<DiracSpinor> m_valence{};
   std::vector<DiracSpinor> m_hf_valence{};
-  // Basis, daigonalised over HF core. Used for MBPT
+  // Basis, diagonalised over HF core. Used for MBPT
   std::vector<DiracSpinor> m_basis{};
-  // Sprectrum: like basis, but includes Sigma (correlations).
+  // Spectrum: like basis, but includes Sigma (correlations).
   std::vector<DiracSpinor> m_spectrum{};
   // Nuclear potential // here AND hf?
   std::vector<double> m_vnuc{};
@@ -93,7 +93,7 @@ private:
   std::optional<HF::HartreeFock> m_HF{std::nullopt};
   // Correlation potential; for now unique_ptr; prefer std::optional
   std::optional<MBPT::CorrelationPotential> m_Sigma{};
-  // Core configuration (non-rel terms)
+  // Core configuration (non-rel. terms)
   std::string m_core_string = "";
   std::string m_aboveFermi_core_string = "";
 
@@ -475,6 +475,8 @@ public:
   */
   void radiativePotential(const IO::InputBlock &qed_input, bool do_readwrite,
                           bool print);
+
+  void radiativePotential_AMM_corrections();
 
   //! Calculates + populates basis [see BSplineBasis]
   void formBasis(const SplineBasis::Parameters &params);

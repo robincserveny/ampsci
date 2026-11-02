@@ -270,6 +270,29 @@ Wavefunction ampsci(const IO::InputBlock &input) {
     std::cout << "\n";
   }
 
+  //############################################################################
+  // Now calculate radiativePotential corrections DeltaH/H_AMM
+  // check which correction is wanted
+  else if (include_qed && qed_core) {
+
+    // Core now exists, so form core-dependent AMM corrections
+    const auto *vrad = wf.vrad();
+    const bool include_AMM_correction =
+      vrad && (vrad->scale_DeltaH() != 0.0 || vrad->scale_HmagV2() != 0.0);
+
+    if (include_AMM_correction) {
+      std::cout << "\nIncluding QED correction for anomalous magnetic moment "
+                   "into core and valence now that wavefunctions available";
+      wf.radiativePotential_AMM_corrections();
+
+      std::cout << "\nSolving core again now.\n";
+      wf.solve_core(true);
+      std::cout << "\n";
+    }
+  }
+
+  //############################################################################
+
   // Solve for the valence states:
   wf.solve_valence(valence);
 

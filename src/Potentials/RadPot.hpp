@@ -8,6 +8,9 @@
 #include <algorithm>
 #include <vector>
 
+//needed for QED core corrections for AMM, need to declare so QED knows this type exists
+class Wavefunction;
+
 //! Radiative QED corrections (Flambaum-Ginges Radiative Potenti)
 namespace QED {
 
@@ -47,13 +50,18 @@ private:
   Xl m_xl;
   bool print;
 
-  std::vector<double> mVu{};  // Uehling
-  std::vector<double> mVh{};  // High-freq electric SE (without A)
-  std::vector<double> mVl{};  // Low-freq electric SE (without B)
-  std::vector<double> mHm{};  // Magnetic FF
+  std::vector<double> mVu{};     // Uehling
+  std::vector<double> mVh{};     // High-freq electric SE (without A)
+  std::vector<double> mVl{};     // Low-freq electric SE (without B)
+  std::vector<double> mHm{};     // Magnetic FF
   std::vector<double> mDeltaH{}; // DeltaH correction for Magnetic FF
-  std::vector<double> mHmV2{};  // Magnetic FF alternative for Landé g
-  std::vector<double> mVwk{}; // Approx Wickman-Kroll
+  std::vector<double> mHmV2{};   // Magnetic FF alternative for Landé g
+  std::vector<double> mVwk{};    // Approx Wickman-Kroll
+
+  std::vector<double> form_DeltaH(const Wavefunction &wf,
+                                  const double scale) const;
+  std::vector<double> nuclear_density(const Wavefunction &wf) const;
+  std::vector<double> form_Zr_r2(const Wavefunction &wf) const;
 
 public:
   //! Empty constructor
@@ -64,8 +72,8 @@ public:
     rcut is maxum radius (atomic units) to calc potential for.
   */
   RadPot(const std::vector<double> &r, double Z, double rN = 0.0,
-         double rcut = 0.0, Scale f = {1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0}, Xl xl = {},
-         bool tprint = true, bool do_readwrite = true,
+         double rcut = 0.0, Scale f = {1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0},
+         Xl xl = {}, bool tprint = true, bool do_readwrite = true,
          const std::string &label = "");
 
   bool read_write(const std::vector<double> &r, IO::FRW::RoW rw,
@@ -73,23 +81,27 @@ public:
 
   void form_potentials(const std::vector<double> &r);
 
+  //for AMM corrections to include
+  void update_core_corrections(const Wavefunction &wf);
+
   //! Returns entire electric part of potential
   std::vector<double> Vel(int l = 0) const;
   //! Returns H_mag (magnetic self-energy form vactor)
   std::vector<double> Hmag(int) const;
+
+  //###################
   double scale_Hmag() const { return m_f.m; }
+
+  std::vector<double> Hmag_AMM(int l) const;
+
   //NEW!!! corrected Hmag; Hmag_corr = Hmag + DeltaH
   const std::vector<double> &DeltaH() const { return mDeltaH; }
-  void set_DeltaH(std::vector<double> deltaH) {
-    mDeltaH = std::move(deltaH);
-  }
   double scale_DeltaH() const { return m_f.dm; }
   // H_mag V2
   const std::vector<double> &HmagV2() const { return mHmV2; }
-  void set_HmagV2(std::vector<double> HmagV2) {
-    mHmV2 = std::move(HmagV2);
-  }
-  double scale_HmagV2() const { return m_f.mV2; } 
+  double scale_HmagV2() const { return m_f.mV2; }
+  //###################
+
   //! Uehling potential
   std::vector<double> Vu(int l = 0) const;
   //! Low-frequency electric self-energy potential

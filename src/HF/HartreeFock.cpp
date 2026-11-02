@@ -1278,7 +1278,9 @@ std::vector<double> HartreeFock::Hrad_el(int l) const {
   return m_vrad ? m_vrad->Vel(l) : std::vector<double>{};
 }
 std::vector<double> HartreeFock::Hmag(int l) const {
-  return m_vrad ? m_vrad->Hmag(l) : std::vector<double>{};
+  //return m_vrad ? m_vrad->Hmag(l) : std::vector<double>{};
+  return m_vrad ? m_vrad->Hmag_AMM(l) :
+                  std::vector<double>{}; //to include AMM corrections if wanted
 }
 //==============================================================================
 //==============================================================================

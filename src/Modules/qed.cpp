@@ -103,18 +103,24 @@ void QED(const IO::InputBlock &input, const Wavefunction &wf) {
   // Construct the radiative potentials (seperately, and a 'total' one)
   // nb: don't write to disk, allows easier update of, e.g., rcut
   std::cout << "\n";
-  auto Ueh = QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
-                         {1.0, 0.0, 0.0, 0.0, 0.0}, x_spd, true, false);
-  auto SEh = QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
-                         {0.0, 1.0, 0.0, 0.0, 0.0}, x_spd, true, false);
-  auto SEl = QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
-                         {0.0, 0.0, 1.0, 0.0, 0.0}, x_spd, true, false);
-  auto SEm = QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
-                         {0.0, 0.0, 0.0, 1.0, 0.0}, x_spd, true, false);
-  auto WK = QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
-                        {0.0, 0.0, 0.0, 0.0, 1.0}, x_spd, true, false);
-  auto Vtot = QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
-                          {1.0, 1.0, 1.0, 1.0, 1.0}, x_spd, false, false);
+  auto Ueh =
+    QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
+                {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, x_spd, true, false);
+  auto SEh =
+    QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
+                {0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0}, x_spd, true, false);
+  auto SEl =
+    QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
+                {0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0}, x_spd, true, false);
+  auto SEm =
+    QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
+                {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0}, x_spd, true, false);
+  auto WK =
+    QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
+                {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0}, x_spd, true, false);
+  auto Vtot =
+    QED::RadPot(wf.grid().r(), wf.Znuc(), r_N_au, rcut,
+                {1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0}, x_spd, false, false);
 
   //----------------------------------------------------------------------------
 

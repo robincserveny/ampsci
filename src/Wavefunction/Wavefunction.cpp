@@ -265,6 +265,15 @@ void Wavefunction::radiativePotential(const IO::InputBlock &qed_input,
 }
 
 //==============================================================================
+void Wavefunction::radiativePotential_AMM_corrections() {
+  if (!m_HF || !m_HF->Vrad()) {
+    std::cout << "\nWarning: QED potential is not set\n";
+    return;
+  }
+  m_HF->Vrad()->update_core_corrections(*this);
+}
+
+//==============================================================================
 bool Wavefunction::isInCore(int n, int k) const {
   const auto find_nk = [n, k](const auto &Fa) {
     return Fa.n() == n && Fa.kappa() == k;
