@@ -247,16 +247,13 @@ void RadPot::update_core_corrections(const Wavefunction &wf) {
     //else calculate DeltaH + Zr_r2
     mHmV2.resize(DeltaH.size());
     for (std::size_t i = 0; i < DeltaH.size(); ++i) {
-      mHmV2[i] = scale_mV2 * (DeltaH[i] + Zr_r2[i]);
+      mHmV2[i] = scale_mV2 * (DeltaH[i] + Zr_r2[i]); //probably overload qip::overloads
     }
   }
 }
 //==============================================================================
 std::vector<double> RadPot::form_DeltaH(const Wavefunction &wf,
                                         const double scale) const {
-
-  const std::vector<double> rho_nuc = nuclear_density(wf);
-
   const Grid &gr = wf.grid();
   std::vector<double> Ncore_r(gr.num_points(), 0.0);
   for (const auto &Fc : wf.core()) {
@@ -274,7 +271,8 @@ std::vector<double> RadPot::form_DeltaH(const Wavefunction &wf,
   double global_fac = PhysConst::alpha2 / (4.0 * M_PI);
   std::vector<double> DeltaH(gr.num_points(), 0.0);
   for (std::size_t i = 0; i < gr.num_points(); ++i) {
-    DeltaH[i] = -scale * global_fac * Ncore_r[i] / (gr.r(i) * gr.r(i));
+    DeltaH[i] = -scale * global_fac * Ncore_r[i] / (gr.r(i) * gr.r(i)); //unsure if numerically stable
+    // ask Ben probably
   }
   return DeltaH;
 }
@@ -295,7 +293,7 @@ std::vector<double> RadPot::form_Zr_r2(const Wavefunction &wf) const {
 
   NumCalc::additivePIntegral<NumCalc::zero_to_r>(Zr, fac_Z, r2, rho_nuc, gr);
 
-  //return full result, is bc void NumCalc::additivePIntegral overwrites 1st argument
+  //return full result, is bc void NumCalc::additivePIntegral adds to 1st argument
   double global_fac = PhysConst::alpha2 / (4.0 * M_PI);
   std::vector<double> Zr_r2(gr.num_points(), 0.0);
   for (std::size_t i = 0; i < gr.num_points(); ++i) {
